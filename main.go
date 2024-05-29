@@ -1,6 +1,7 @@
 package main
 
 import (
+	"gin-gorm/docs"
 	"log"
 	"net/http"
 	"os"
@@ -8,6 +9,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+	swaggerfiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger" // gin-swagger middleware
+
+	// swagger embed files
 	"gorm.io/driver/sqlserver"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -22,8 +27,24 @@ type User struct {
 	Password string `gorm:"not null"`
 }
 
+// @BasePath /api/v1
+
+// PingExample godoc
+// @Summary ping example
+// @Schemes
+// @Description do ping
+// @Tags example
+// @Accept json
+// @Produce json
+// @Success 200 {string} Helloworld
+// @Router /example/helloworld [get]
+func Helloworld(g *gin.Context) {
+	g.JSON(http.StatusOK, "helloworld")
+}
+
 func main() {
 	gin.SetMode(gin.ReleaseMode)
+	docs.SwaggerInfo.BasePath = "/api/v1"
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatal("Error loading .env file")
@@ -49,6 +70,15 @@ func main() {
 	r.Use(gin.Logger())
 	r.Use(gin.Recovery())
 	r.SetTrustedProxies(nil)
+
+	v1 := r.Group("/api/v1")
+	{
+		eg := v1.Group("/example")
+		{
+			eg.GET("/helloworld", Helloworld)
+		}
+
+	}
 	r.GET("/ping", func(c *gin.Context) {
 		// user := User{Name: "Dung", Password: "Tranvandung", Email: "trandungksnb00@gmail.com"}
 		// result := db.Create(&user) // pass pointer of data to Creat
@@ -58,6 +88,7 @@ func main() {
 			"data": user,
 		})
 	})
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 	r.Run()
 
 }
